@@ -1,4 +1,5 @@
 import streamlit as st
+import contrato
 from datetime import datetime, time
 
 def main():
