@@ -1,31 +1,40 @@
-import streamlit as st
+import psycopg2
+from psycopg2 import sql
 from contrato import Vendas
-from datetime import datetime, time
-from pydantic import ValidationError
+import streamlit as st
+from dotenv import load_dotenv
+import os
 
-def main():
+load_dotenv()
 
-    st.title("Sistema de CRM e Vendas")
-    email = st.text_input("Email vendedor")
-    data = st.date_input("Data da Venda", datetime.now())
-    hora = st.time_input("Hora da venda", value=time(9,0))
-    valor = st.number_input("Valor da venda", min_value=0.0, format="%.2f")
-    quantidade = st.number_input("Quantidade produtos")
-    produto = st.selectbox("Produto", options= ["Zapflow com Gemini", "Zapflow com ChatGPT", "Zapflow com Llmama3.0"])
+DB_HOST = os.getenv("DB_HOST")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
 
-    if st.button("Salvar"):
-        try:      
-            data_hora = datetime.combine(data, hora)
-            venda = Vendas(
-                email = email,
-                data = data_hora,
-                valor = valor,
-                quantidade = quantidade,
-                produto = produto
-            )
-            st.write(venda)
-        except ValidationError as e:
-            st.error(f"Deu erro {e}")
-        
-if __name__=="__main__":
-    main()
+def salvar_no_postgres(dados: Vendas):
+    try:
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASS
+        )
+        cursor = conn.cursor()
+
+        insert_query = sql.SQL(
+            "INSERT INTO vendas (email, data, valor, quantidade, produto) VALUES (%s, %)"
+        )
+        cursor.execute(insert_query, (
+            dados.email, 
+            dados.data, 
+            dados.valor, 
+            dados.quantidade,
+            dados.produto.value
+        ))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        st.success("dados salvos com sucesso no banco de dados")
+    except Exception as e:
+        st.error(f"Erro ao salvar dados no banco de dados: {e}")
