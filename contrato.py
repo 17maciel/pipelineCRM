@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Tuple
 
-from pydantic import BaseModel, EmailStr, validate_call
+from pydantic import BaseModel, EmailStr, PositiveFloat, PositiveInt
 
 from enum import Enum
 
@@ -13,13 +13,10 @@ class ProdutoEnum(str, Enum):
 
 class Vendas(BaseModel):
     email: EmailStr
-    data_hora: datetime
-    valor: float
-    quantidade: int
+    data: datetime
+    valor: PositiveFloat
+    quantidade: PositiveInt
     produto: ProdutoEnum
 
 
-    @validate_call('produto')
-    def categoria_deve_estar_no_enum(cls, v):
-        return v
 
